@@ -14,3 +14,4 @@ Bernardo Costa is a Geographer, PhD student in Physical Geography - focusing on 
 University of Lisbon
 
 email: bcosta4@edu.ulisboa.pt
+Changed!
