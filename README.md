@@ -5,6 +5,7 @@ Reproducible Approaches to Arctic Research Using R Course
 
 - Create a remote repository
 - Practice git workflow
+- Have fun!
 
 ## Creator 
 
