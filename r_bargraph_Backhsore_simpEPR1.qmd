@@ -1,22 +1,20 @@
 ---
-title: "r_bargraph_ForeshoreEPR"
-format: html
-editor: visual
+output: html_document
 editor_options: 
   chunk_output_type: console
 ---
-
 ```{r}
 library(ggplot2)
 library(dplyr)
 library(readr)
 ```
 
+
 ```{r}
 # Load the data
 file_path <- "C:/UNI/All values.csv"
 save_dir <- "C:/UNI/Artigo1/Figuras"
-base_filename <- "ForeshoreMorphology_EPRaverage_bargraph_v"
+base_filename <- "Backshore_simpMorphology_EPRaverage_bargraph_v"
 
 # Function to generate a new versioned filename
 get_new_version_filename <- function(base_filename, save_dir) {
@@ -31,30 +29,41 @@ get_new_version_filename <- function(base_filename, save_dir) {
   }
 }
 
-# Create a mapping for the foreshore types
-foreshore_mapping <- c("1" = "Beaches", "2" = "Tundra Flats", "3" = "Active Bluffs")
+# Create a mapping for the backshore types
+backshore_mapping <- c(
+  "1" = "Bluffs with low ice-wedge degradation",
+  "2" = "Bluffs with high ice-wedge degradation",
+  "3" = "Tundra Flats",
+  "4" = "Barrier Beaches and Sandspits"
+)
 
-# Replace the foreshore column with the corresponding names
+# Define colors for each backshore type
+colors <- c(
+  "Bluffs with low ice-wedge degradation" = "lightsalmon",
+  "Bluffs with high ice-wedge degradation" = "darkviolet",
+  "Tundra Flats" = "limegreen",
+  "Barrier Beaches and Sandspits" = "darkgoldenrod"
+)
+
+# Replace the Backshore_simp column with the corresponding names
 data <- read_csv(file_path)
-data$Foreshore <- foreshore_mapping[as.character(data$Foreshore)]
+data$Backshore_simp <- backshore_mapping[as.character(data$Backshore_simp)]
 
-# Group by foreshore types and calculate the average of EPR
+# Group by backshore types and calculate the average of EPR
 average_epr <- data %>%
-  group_by(Foreshore) %>%
+  group_by(Backshore_simp) %>%
   summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
-  arrange(match(Foreshore, c("Tundra Flats", "Beaches", "Active Bluffs")))
-
-# Define colors for each foreshore type
-colors <- c("Beaches" = "darkgoldenrod", "Tundra Flats" = "limegreen", "Active Bluffs" = "red")
+  arrange(desc(Average_EPR))
 ```
+
 
 ```{r}
 # Plot the horizontal bar chart
-p <- ggplot(average_epr, aes(x = Average_EPR, y = Foreshore, fill = Foreshore)) +
+p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_simp, -Average_EPR), fill = Backshore_simp)) +
   geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = round(Average_EPR, 2), hjust = -0.3), size = 9) +  # Adjust hjust for more space
+  geom_text(aes(label = sprintf("%.2f", Average_EPR), hjust = -0.3), size = 9) +  # Adjust hjust for more space
   scale_fill_manual(values = colors) +
-  labs(title = "(a) Shoreline Change Rates per Foreshore Morphology (1950-2020)") +
+  labs(title = "(b) Shoreline Change Rates per Backshore Group Morphology (1950-2020)") +
   theme_minimal(base_size = 18) +
   theme(
     plot.title = element_text(size = 24, hjust = 0.5, vjust = 1),
@@ -70,6 +79,8 @@ p <- ggplot(average_epr, aes(x = Average_EPR, y = Foreshore, fill = Foreshore)) 
   ) +
   scale_x_reverse(limits = c(0, -1.6), breaks = seq(0, -1.5, by = -0.5))  # Set x-axis range and ticks
 
+# Adjust layout to center title with the whole figure
+p <- p + theme(plot.margin = margin(t = 20, b = 10, l = 10, r = 10))
 
 # Get new versioned filename
 save_path <- get_new_version_filename(base_filename, save_dir)[[1]]
@@ -80,3 +91,12 @@ ggsave(save_path, plot = p, width = 16, height = 8)
 # Print the saved path for confirmation
 print(paste("Plot saved as:", save_path))
 ```
+
+
+```{r}
+```
+
+
+```{r}
+```
+

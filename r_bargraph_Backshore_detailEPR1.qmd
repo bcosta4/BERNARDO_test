@@ -34,6 +34,20 @@ get_new_version_filename <- function(base_filename, save_dir) {
 # Load the data
 data <- read_csv(file_path)
 
+# Create a mapping for the backshore types
+backshore_mapping <- c(
+  "1" = "Very low bluffs with low ice-wedge degradation",
+  "2" = "Low bluffs with low ice-wedge degradation",
+  "3" = "Medium bluffs with low ice-wedge degradation",
+  "4" = "Inundated tundra flats and polygons",
+  "5" = "Intertidal inundated flats with wetlands",
+  "6" = "Barrier Beaches and Sandspits",
+  "7" = "Very low bluffs with high ice-wedge degradation",
+  "8" = "Low bluffs with high ice-wedge degradation",
+  "9" = "Medium bluffs with high ice-wedge degradation",
+  "10" = "Slump toe bluffs"
+)  
+
 # Calculate the Average_EPR per Backshore_detail
 average_epr <- data %>%
   group_by(Backshore_detail) %>%
@@ -72,22 +86,22 @@ print(average_epr)
 # Create the plot with adjusted x-axis range, label positioning, and centered title
 p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Average_EPR), fill = color)) +
   geom_bar(stat = "identity", width = 0.7) +
-  geom_text(aes(label = sprintf("%.2f", Average_EPR), hjust = -0.3), size = 6) +  # Adjust hjust for more space
+  geom_text(aes(label = sprintf("%.2f", Average_EPR), hjust = -0.3), size = 9) +  # Adjust hjust for more space
   scale_fill_identity() +
   labs(title = "(c) Shoreline Change Rates per Detailed Group Morphology (1950-2020)") +
   theme_minimal(base_size = 18) +
   theme(
-    plot.title = element_text(size = 21, hjust = 0.5, vjust = 1),
+    plot.title = element_text(size = 2, hjust = 0.5, vjust = 1),
     plot.title.position = "plot",  # Center title relative to entire plot
-    axis.text.x = element_text(size = 18),
-    axis.text.y = element_text(size = 18),
+    axis.text.x = element_text(size = 24),
+    axis.text.y = element_text(size = 24),
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
     panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank(),
     plot.margin = margin(10, 30, 10, 10)  # Maintain right margin
   ) +
-  scale_x_reverse(limits = c(0, -1.5))  # Set x-axis range from 0 to -1.7
+  scale_x_reverse(limits = c(0, -1.6))  # Set x-axis range from 0 to -1.7
 
 # Save the plot with adjusted width and height
 ggsave(save_path, plot = p, width = 16, height = 8)
