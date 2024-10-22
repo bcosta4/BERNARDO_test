@@ -1,9 +1,7 @@
 ---
-title: "r_bargraph_Backshore_simpEPR"
+title: "r_bargraph_Backshore_detailEPR"
 format: html
 editor: visual
-editor_options: 
-  chunk_output_type: console
 ---
 
 ```{r}
@@ -16,7 +14,7 @@ library(readr)
 # Load the data
 file_path <- "C:/UNI/All values.csv"
 save_dir <- "C:/UNI/Artigo1/Figuras"
-base_filename <- "Backshore_simpMorphology_EPRaverage_bargraph_v"
+base_filename <- "Backshore_detailMorphology_EPRaverage_bargraph_v"
 
 # Function to generate a new versioned filename
 get_new_version_filename <- function(base_filename, save_dir) {
@@ -33,10 +31,16 @@ get_new_version_filename <- function(base_filename, save_dir) {
 
 # Create a mapping for the backshore types
 backshore_mapping <- c(
-  "1" = "Bluffs with low ice-wedge degradation",
-  "2" = "Bluffs with high ice-wedge degradation",
-  "3" = "Tundra Flats",
-  "4" = "Barrier Beaches and Sandspits"
+  "1" = "Very low bluffs with low ice-wedge degradation",
+  "2" = "Low bluffs with low ice-wedge degradation",
+  "3" = "Medium bluffs with low ice-wedge degradation",
+  "4" = "Inundated tundra flats and polygons",
+  "5" = "Intertidal inundated flats with wetlands",
+  "6" = "Barrier Beaches and Sandspits"
+  "7" = "Very low bluffs with high ice-wedge degradation",
+  "8" = "Low bluffs with low ice-wedge degradation",
+  "9" = "Medium bluffs with low ice-wedge degradation",
+  "10" = "Slump toe bluffs",
 )
 
 # Define colors for each backshore type
@@ -49,16 +53,16 @@ colors <- c(
 
 # Replace the Backshore_simp column with the corresponding names
 data <- read_csv(file_path)
-data$Backshore_simp <- backshore_mapping[as.character(data$Backshore_simp)]
+data$Backshore_detail <- backshore_mapping[as.character(data$Backshore_detail)]
 
 # Group by backshore types and calculate the average of EPR
 average_epr <- data %>%
-  group_by(Backshore_simp) %>%
+  group_by(Backshore_detail) %>%
   summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
   arrange(desc(Average_EPR))
 
 # Plot the horizontal bar chart
-p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_simp, -Average_EPR), fill = Backshore_simp)) +
+p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Average_EPR), fill = Backshore_detail)) +
   geom_bar(stat = "identity", width = 0.7) +
   geom_text(aes(label = round(Average_EPR, 2), hjust = -0.1), size = 5) +
   scale_fill_manual(values = colors) +
