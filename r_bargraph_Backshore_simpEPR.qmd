@@ -1,0 +1,91 @@
+---
+title: "r_bargraph_Backshore_simpEPR"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+# Load the data
+file_path <- "C:/UNI/All values.csv"
+save_dir <- "C:/UNI/Artigo1/Figuras"
+base_filename <- "Backshore_simpMorphology_EPRaverage_bargraph_v"
+
+# Function to generate a new versioned filename
+get_new_version_filename <- function(base_filename, save_dir) {
+  version <- 1
+  while (TRUE) {
+    filename <- paste0(base_filename, version, ".png")
+    full_path <- file.path(save_dir, filename)
+    if (!file.exists(full_path)) {
+      return(list(full_path, version))
+    }
+    version <- version + 1
+  }
+}
+
+# Create a mapping for the backshore types
+backshore_mapping <- c(
+  "1" = "Bluffs with low ice-wedge degradation",
+  "2" = "Bluffs with high ice-wedge degradation",
+  "3" = "Tundra Flats",
+  "4" = "Barrier Beaches and Sandspits"
+)
+
+# Define colors for each backshore type
+colors <- c(
+  "Bluffs with low ice-wedge degradation" = "lightsalmon",
+  "Bluffs with high ice-wedge degradation" = "darkviolet",
+  "Tundra Flats" = "limegreen",
+  "Barrier Beaches and Sandspits" = "darkgoldenrod"
+)
+
+# Replace the Backshore_simp column with the corresponding names
+data <- read_csv(file_path)
+data$Backshore_simp <- backshore_mapping[as.character(data$Backshore_simp)]
+
+# Group by backshore types and calculate the average of EPR
+average_epr <- data %>%
+  group_by(Backshore_simp) %>%
+  summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
+  arrange(Average_EPR)
+
+# Plot the horizontal bar chart
+p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_simp, Average_EPR), fill = Backshore_simp)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = round(Average_EPR, 2), hjust = -0.1), size = 5) +
+  scale_fill_manual(values = colors) +
+  labs(title = "(b) Shoreline Change Rates per Backshore Group Morphology (1950-2020)") +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(size = 16, hjust = 0.5, vjust = 1),
+    axis.text.x = element_text(size = 14),
+    axis.text.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major.y = element_blank(),  # Remove horizontal gridlines
+    panel.grid.minor.y = element_blank()
+  ) +
+  coord_cartesian(xlim = c(0, -1.2)) +
+  scale_x_reverse(breaks = seq(0, -1.2, by = -0.2), labels = seq(0, -1.2, by = -0.2)) +
+  theme(legend.position = "none")
+
+# Adjust layout to center title with the whole figure
+p <- p + theme(plot.margin = margin(t = 20, b = 10, l = 10, r = 10))
+
+# Get new versioned filename
+save_path <- get_new_version_filename(base_filename, save_dir)[[1]]
+
+# Save the plot
+ggsave(save_path, plot = p, width = 12, height = 6)
+
+# Print the saved path for confirmation
+print(paste("Plot saved as:", save_path))
+```

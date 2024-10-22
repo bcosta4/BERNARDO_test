@@ -1,0 +1,80 @@
+---
+title: "r_bargraph_ForeshoreEPR"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+# Load the data
+file_path <- "C:/UNI/All values.csv"
+save_dir <- "C:/UNI/Artigo1/Figuras"
+base_filename <- "ForeshoreMorphology_EPRaverage_bargraph_v"
+
+# Function to generate a new versioned filename
+get_new_version_filename <- function(base_filename, save_dir) {
+  version <- 1
+  while (TRUE) {
+    filename <- paste0(base_filename, version, ".png")
+    full_path <- file.path(save_dir, filename)
+    if (!file.exists(full_path)) {
+      return(list(full_path, version))
+    }
+    version <- version + 1
+  }
+}
+
+# Create a mapping for the foreshore types
+foreshore_mapping <- c("1" = "Beaches", "2" = "Tundra Flats", "3" = "Active Bluffs")
+
+# Replace the foreshore column with the corresponding names
+data <- read_csv(file_path)
+data$Foreshore <- foreshore_mapping[as.character(data$Foreshore)]
+
+# Group by foreshore types and calculate the average of EPR
+average_epr <- data %>%
+  group_by(Foreshore) %>%
+  summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
+  arrange(match(Foreshore, c("Tundra Flats", "Beaches", "Active Bluffs")))
+
+# Define colors for each foreshore type
+colors <- c("Beaches" = "darkgoldenrod", "Tundra Flats" = "limegreen", "Active Bluffs" = "red")
+
+# Plot the horizontal bar chart
+p <- ggplot(average_epr, aes(x = Average_EPR, y = Foreshore, fill = Foreshore)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = round(Average_EPR, 2), hjust = -0.1), size = 5) +
+  scale_fill_manual(values = colors) +
+  labs(title = "(a) Shoreline Change Rates per Foreshore Morphology (1950-2020)") +
+  theme_minimal(base_size = 14) +
+  theme(plot.title = element_text(size = 16, hjust = 0.5),
+        axis.text.x = element_text(size = 14),
+        axis.text.y = element_text(size = 14),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.grid.major.y = element_blank(),  # Remove horizontal gridlines
+        panel.grid.minor.y = element_blank()) +
+  coord_cartesian(xlim = c(0, -1.2)) +
+  scale_x_reverse(breaks = seq(0, -1.2, by = -0.2), labels = seq(0, -1.2, by = -0.2)) +
+  theme(legend.position = "none")
+
+# Adjust layout
+p <- p + theme(plot.margin = margin(t = 10, b = 10, l = 10, r = 10))
+
+# Get new versioned filename
+save_path <- get_new_version_filename(base_filename, save_dir)[[1]]
+
+# Save the plot
+ggsave(save_path, plot = p, width = 10, height = 4)
+
+# Print the saved path for confirmation
+print(paste("Plot saved as:", save_path))
+
+```
