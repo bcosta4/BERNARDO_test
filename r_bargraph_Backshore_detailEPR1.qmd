@@ -1,0 +1,97 @@
+---
+title: "r_bargraph_Backshore_detailEPR"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(readr)
+```
+
+```{r}
+# Load the data
+file_path <- "C:/UNI/All values.csv"
+save_dir <- "C:/UNI/Artigo1/Figuras"
+base_filename <- "Backshore_detailMorphology_EPRaverage_bargraph_v"
+
+# Function to generate a new versioned filename
+get_new_version_filename <- function(base_filename, save_dir) {
+  version <- 1
+  while (TRUE) {
+    filename <- paste0(base_filename, version, ".png")
+    full_path <- file.path(save_dir, filename)
+    if (!file.exists(full_path)) {
+      return(list(full_path, version))
+    }
+    version <- version + 1
+  }
+}
+
+# Load the data
+data <- read_csv(file_path)
+
+# Calculate the Average_EPR per Backshore_detail
+average_epr <- data %>%
+  group_by(Backshore_detail) %>%
+  summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
+  arrange(desc(Average_EPR))
+
+# Map backshore types to descriptive labels
+average_epr$Backshore_detail <- factor(average_epr$Backshore_detail, levels = names(backshore_mapping), labels = backshore_mapping)
+
+# Create a new versioned filename for saving the plot
+file_info <- get_new_version_filename(base_filename, save_dir)
+save_path <- file_info[[1]]
+
+# Create a mapping for colors based on original numeric values
+color_mapping <- c(
+  "1" = "lightsalmon",
+  "2" = "lightsalmon",
+  "3" = "lightsalmon",
+  "4" = "limegreen",
+  "5" = "limegreen",
+  "6" = "darkgoldenrod",
+  "7" = "darkviolet",
+  "8" = "darkviolet",
+  "9" = "darkviolet",
+  "10" = "lightsalmon"
+)
+
+# Assign colors directly based on the Backshore_detail factor levels
+average_epr$color <- color_mapping[as.character(as.numeric(average_epr$Backshore_detail))]
+
+# Check the data before plotting
+print(average_epr)
+```
+
+```{r}
+# Create the plot with adjusted x-axis range, label positioning, and centered title
+p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Average_EPR), fill = color)) +
+  geom_bar(stat = "identity", width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", Average_EPR), hjust = -0.3), size = 6) +  # Adjust hjust for more space
+  scale_fill_identity() +
+  labs(title = "(c) Shoreline Change Rates per Detailed Group Morphology (1950-2020)") +
+  theme_minimal(base_size = 18) +
+  theme(
+    plot.title = element_text(size = 21, hjust = 0.5, vjust = 1),
+    plot.title.position = "plot",  # Center title relative to entire plot
+    axis.text.x = element_text(size = 18),
+    axis.text.y = element_text(size = 18),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    plot.margin = margin(10, 30, 10, 10)  # Maintain right margin
+  ) +
+  scale_x_reverse(limits = c(0, -1.5))  # Set x-axis range from 0 to -1.7
+
+# Save the plot with adjusted width and height
+ggsave(save_path, plot = p, width = 16, height = 8)
+
+# Print confirmation
+print(paste("Plot saved as:", save_path))
+```

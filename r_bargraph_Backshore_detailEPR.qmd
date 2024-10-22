@@ -2,6 +2,8 @@
 title: "r_bargraph_Backshore_detailEPR"
 format: html
 editor: visual
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -36,36 +38,51 @@ backshore_mapping <- c(
   "3" = "Medium bluffs with low ice-wedge degradation",
   "4" = "Inundated tundra flats and polygons",
   "5" = "Intertidal inundated flats with wetlands",
-  "6" = "Barrier Beaches and Sandspits"
+  "6" = "Barrier Beaches and Sandspits",
   "7" = "Very low bluffs with high ice-wedge degradation",
-  "8" = "Low bluffs with low ice-wedge degradation",
-  "9" = "Medium bluffs with low ice-wedge degradation",
-  "10" = "Slump toe bluffs",
+  "8" = "Low bluffs with high ice-wedge degradation",
+  "9" = "Medium bluffs with high ice-wedge degradation",
+  "10" = "Slump toe bluffs"
 )
 
-# Define colors for each backshore type
-colors <- c(
-  "Bluffs with low ice-wedge degradation" = "lightsalmon",
-  "Bluffs with high ice-wedge degradation" = "darkviolet",
-  "Tundra Flats" = "limegreen",
-  "Barrier Beaches and Sandspits" = "darkgoldenrod"
-)
-
-# Replace the Backshore_simp column with the corresponding names
-data <- read_csv(file_path)
-data$Backshore_detail <- backshore_mapping[as.character(data$Backshore_detail)]
-
-# Group by backshore types and calculate the average of EPR
+# Ensure Average_EPR is calculated correctly
 average_epr <- data %>%
   group_by(Backshore_detail) %>%
   summarise(Average_EPR = mean(EPR, na.rm = TRUE)) %>%
   arrange(desc(Average_EPR))
 
-# Plot the horizontal bar chart
-p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Average_EPR), fill = Backshore_detail)) +
+# Create a mapping for colors based on original numeric values
+color_mapping <- c(
+  "1" = "lightsalmon",
+  "2" = "lightsalmon",
+  "3" = "lightsalmon",
+  "4" = "limegreen",
+  "5" = "limegreen",
+  "6" = "darkgoldenrod",
+  "7" = "darkviolet",
+  "8" = "darkviolet",
+  "9" = "darkviolet",
+  "10" = "lightsalmon"
+)
+
+# Create a new column with the original numeric identifiers for Backshore_detail
+average_epr$Original_ID <- sapply(average_epr$Backshore_detail, function(x) {
+  match(x, backshore_mapping)
+})
+
+# Assign colors based on Original_ID
+average_epr$color <- color_mapping[as.character(average_epr$Original_ID)]
+
+# Check the data before plotting
+print(average_epr)
+```
+
+```{r}
+# Plot the horizontal bar chart with inverted x-axis
+p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Average_EPR), fill = color)) +
   geom_bar(stat = "identity", width = 0.7) +
   geom_text(aes(label = round(Average_EPR, 2), hjust = -0.1), size = 5) +
-  scale_fill_manual(values = colors) +
+  scale_fill_identity() +  # Use scale_fill_identity to map colors directly
   labs(title = "(b) Shoreline Change Rates per Backshore Group Morphology (1950-2020)") +
   theme_minimal(base_size = 14) +
   theme(
@@ -74,15 +91,10 @@ p <- ggplot(average_epr, aes(x = Average_EPR, y = reorder(Backshore_detail, -Ave
     axis.text.y = element_text(size = 14),
     axis.title.x = element_blank(),
     axis.title.y = element_blank(),
-    panel.grid.major.y = element_blank(),  # Remove horizontal gridlines
+    panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank()
   ) +
-  coord_cartesian(xlim = c(0, -1.2)) +
-  scale_x_reverse(breaks = seq(0, -1.2, by = -0.2), labels = seq(0, -1.2, by = -0.2)) +
-  theme(legend.position = "none")
-
-# Adjust layout to center title with the whole figure
-p <- p + theme(plot.margin = margin(t = 20, b = 10, l = 10, r = 10))
+  scale_x_reverse()  # Invert the x-axis
 
 # Get new versioned filename
 save_path <- get_new_version_filename(base_filename, save_dir)[[1]]
