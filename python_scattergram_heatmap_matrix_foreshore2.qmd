@@ -1,0 +1,104 @@
+---
+title: "python_scattergram_heatmap_matrix_foreshore2"
+format: html
+editor: visual
+jupyter: python3
+editor_options: 
+  chunk_output_type: console
+---
+
+```{python}
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import os
+```
+
+
+```{python}
+# Define the base directory and filename
+base_dir = 'C:/UNI/Artigo1/Figuras/'
+base_filename = 'foreshore_heatmap_matrix'
+
+# Find the highest existing file number
+existing_files = [f for f in os.listdir(base_dir) if f.startswith(base_filename)]
+existing_numbers = [int(f.replace(base_filename, '').replace('.png', '')) for f in existing_files]
+highest_number = max(existing_numbers) if existing_numbers else 0
+
+try:
+    # Load the CSV data
+    df = pd.read_csv("C:/UNI/EPR_areas_CM.csv")
+except Exception as e:
+    print(f"Error reading the CSV file: {e}")
+    exit()
+
+# Check if necessary columns exist in the dataframe
+necessary_columns = ['Foreshore', 'EPR_1950_1', 'EPR_1985_2']
+if not all(column in df.columns for column in necessary_columns):
+    print(f"The dataframe does not contain all necessary columns: {necessary_columns}")
+    exit()
+
+# Create a dictionary that maps the class numbers to their respective titles
+class_titles = {
+    1: 'Beaches',
+    2: 'Tundra flats',
+    3: 'Active bluffs'
+}
+
+# Print a summary of the dataset
+print(df.describe())
+
+# Create a single subplot
+fig, ax = plt.subplots(figsize=(8, 6))
+
+# Define the range and bins for the axes
+x_y_range = np.arange(-6, 2.5, 0.5)  # Values from -6 to 2.5 to include all intervals
+bins = pd.IntervalIndex.from_breaks(x_y_range)  # Define bins of size 0.5
+
+# Define the labels for x and y axes
+x_labels = [f'{i}' for i in x_y_range[:-1]]
+y_labels = [f'{i}' for i in x_y_range[:-1]]
+```
+
+```{python}
+# Create a heatmap for 'Active bluffs'
+class_index = 3  # Index for 'Active bluffs'
+subset = df[df['Foreshore'] == class_index]  # Adjusted the index to start from 1
+if subset.empty:  # Check if the subset is empty
+    print(f"No data for class {class_index} - {class_titles[class_index]}")
+    crosstab = pd.DataFrame(0, index=bins[:-1], columns=bins[:-1])
+else:
+    print(f"Class {class_index} - {class_titles[class_index]} - Subset Size: {len(subset)}")
+    print(subset[['EPR_1950_1', 'EPR_1985_2']].describe())
+    x_values = pd.cut(subset['EPR_1950_1'], bins, include_lowest=True)
+    y_values = pd.cut(subset['EPR_1985_2'], bins, include_lowest=True)
+    print(f"Class {class_index} - x_values Binned: {x_values.value_counts()}")
+    print(f"Class {class_index} - y_values Binned: {y_values.value_counts()}")
+    crosstab = pd.crosstab(x_values, y_values).reindex(index=bins[:-1], columns=bins[:-1], fill_value=0)
+    if crosstab.empty:  # Check if the crosstab is empty
+        print(f"No overlapping bins for class {class_index} - {class_titles[class_index]}")
+        crosstab = pd.DataFrame(0, index=bins[:-1], columns=bins[:-1])
+    else:
+        print(f"Class {class_index} - Crosstab Shape: {crosstab.shape}")
+        crosstab = crosstab / crosstab.sum().sum() * 100
+
+# Create the heatmap
+cbar_kws = {"ticks": [crosstab.min().min(), crosstab.max().max()], "format": '%.0f%%'}  # Add colorbar with min and max ticks and format as percentage
+sns.heatmap(crosstab, ax=ax, cmap='crest', square=True, linewidths=0.1, cbar=True, annot=True, cbar_kws=cbar_kws)
+
+ax.set_title(class_titles[class_index])  # Retrieve title using adjusted index
+ax.set_xlabel('Shoreline Change 1950-1985 (m/yr)')
+ax.set_ylabel('Shoreline Change 1985-2020 (m/yr)')
+ax.set_xticks(np.arange(len(x_labels)))
+ax.set_yticks(np.arange(len(y_labels)))
+ax.set_xticklabels(x_labels, fontsize=8, color='black', rotation=0)
+ax.set_yticklabels(y_labels, fontsize=8, color='black')
+ax.set_xlim([0, len(x_labels) - 1])
+ax.set_ylim([0, len(y_labels) - 1])
+plt.setp(ax.get_xticklabels(), rotation=0, ha='center')  # Adjust x-axis labels
+
+# Save the heatmap as a PNG file in the specified directory with tight margins
+plt.savefig(f'{base_dir}{base_filename}{highest_number + 1}.png', bbox_inches='tight', dpi=600)
+```
+
